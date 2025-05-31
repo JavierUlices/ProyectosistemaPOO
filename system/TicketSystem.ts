@@ -24,21 +24,63 @@ export class TicketSystem {
     this.level1Handler.setSuccessor(level2Handler);
   }
 
-  createTicket(ticketId: number, description: string, priority: Priority): void {
-    const ticket = new Ticket(ticketId, description, priority);
-    ticket.attach(this.notificationService);
-    this.level1Handler.handleRequest(ticket);
-
-    // Imprimir el historial del ticket
-    console.log("\nHistorial del Ticket:");
-    ticket.getHistory().forEach(entry => {
-      console.log(`Estado: ${entry.status}, Hora: ${entry.timestamp}, Acción: ${entry.action || 'N/A'}`);
-    });
-
-    // Imprimir el tiempo de resolución
-    const resolutionTime = ticket.getResolutionTime();
-    if (resolutionTime !== null) {
-      console.log(`\nTiempo de resolución: ${resolutionTime / 1000} segundos\n`);
+  private calculateProcessingTime(priority: Priority): number {
+    // Tiempo base en minutos
+    switch (priority) {
+        case Priority.Critico:
+            return 120; // 2 horas
+        case Priority.Alto:
+            return 60;  // 1 hora
+        case Priority.Medio:
+            return 30;  // 30 minutos
+        case Priority.Bajo:
+            return 15;  // 15 minutos
+        default:
+            return 60;
     }
+  }
+
+  createTicket(ticketId: number, description: string, priority: Priority): Ticket {
+    const processingTime = this.calculateProcessingTime(priority);
+    const currentDate = new Date();
+    const estimatedCompletion = new Date(currentDate.getTime() + processingTime * 60000);
+
+    const ticket = {
+        id: ticketId,
+        description,
+        priority,
+        status: 'Abierto',
+        createdAt: currentDate,
+        estimatedCompletion,
+        resolvedBy: undefined,
+        history: [{
+            status: 'Abierto',
+            timestamp: currentDate,
+            action: 'Ticket creado',
+            estimatedTime: `${processingTime} minutos`
+        }],
+        getHistory() {
+            return this.history;
+        },
+        changeStatus(newStatus: string, resolvedBy?: string) {
+            const timestamp = new Date();
+            const timeElapsed = Math.floor((timestamp.getTime() - this.createdAt.getTime()) / 60000);
+            
+            this.status = newStatus;
+            if (newStatus === 'Resuelto') {
+                this.resolvedBy = resolvedBy;
+            }
+            
+            this.history.push({
+                status: newStatus,
+                timestamp,
+                action: 'Cambio de estado',
+                timeElapsed: `${timeElapsed} minutos`,
+                resolvedBy: resolvedBy
+            });
+        }
+    };
+
+    return ticket;
   }
 }
