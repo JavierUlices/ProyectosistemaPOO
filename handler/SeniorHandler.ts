@@ -13,6 +13,14 @@ export class SeniorHandler extends Handler {
       this.nextHandler(ticket);
     }
   }
+
+  handleTicket(ticket: Ticket): void {
+    if (ticket.priority === Priority.Alto) {
+      ticket.changeStatus('Resuelto', 'Técnico Senior', 'Senior');
+    } else {
+      this.escalateToNextLevel(ticket);
+    }
+  }
 }
 
 // Cambios

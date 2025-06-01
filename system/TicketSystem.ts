@@ -28,15 +28,15 @@ export class TicketSystem {
     // Tiempo base en minutos
     switch (priority) {
         case Priority.Critico:
-            return 120; // 2 horas
+            return 240; // 4 horas para casos críticos
         case Priority.Alto:
-            return 60;  // 1 hora
+            return 180; // 3 horas para prioridad alta
         case Priority.Medio:
-            return 30;  // 30 minutos
+            return 120; // 2 horas para prioridad media
         case Priority.Bajo:
-            return 15;  // 15 minutos
+            return 60;  // 1 hora para prioridad baja
         default:
-            return 60;
+            return 120; // 2 horas por defecto
     }
   }
 
@@ -53,6 +53,7 @@ export class TicketSystem {
         createdAt: currentDate,
         estimatedCompletion,
         resolvedBy: undefined,
+        resolvedByLevel: undefined, // Agregamos el nivel del resolutor
         history: [{
             status: 'Abierto',
             timestamp: currentDate,
@@ -62,13 +63,21 @@ export class TicketSystem {
         getHistory() {
             return this.history;
         },
-        changeStatus(newStatus: string, resolvedBy?: string) {
-            const timestamp = new Date();
-            const timeElapsed = Math.floor((timestamp.getTime() - this.createdAt.getTime()) / 60000);
+        changeStatus(
+            newStatus: string, 
+            resolvedBy?: string, 
+            resolvedByLevel?: string,
+            resolutionTime?: number,
+            resolutionDate?: Date
+        ) {
+            const timestamp = resolutionDate || new Date();
+            const timeElapsed = resolutionTime || 
+                Math.floor((timestamp.getTime() - this.createdAt.getTime()) / 60000);
             
             this.status = newStatus;
             if (newStatus === 'Resuelto') {
                 this.resolvedBy = resolvedBy;
+                this.resolvedByLevel = resolvedByLevel;
             }
             
             this.history.push({
@@ -76,7 +85,11 @@ export class TicketSystem {
                 timestamp,
                 action: 'Cambio de estado',
                 timeElapsed: `${timeElapsed} minutos`,
-                resolvedBy: resolvedBy
+                resolvedBy: resolvedBy,
+                resolvedByLevel: resolvedByLevel,
+                details: resolvedByLevel ? 
+                    `Resuelto por ${resolvedBy} (${resolvedByLevel}) el ${timestamp.toLocaleString()}` : 
+                    undefined
             });
         }
     };
@@ -84,3 +97,17 @@ export class TicketSystem {
     return ticket;
   }
 }
+
+// Agregar a system/TicketSystem.ts
+interface SLAPolicy {
+    priority: Priority;
+    maxResolutionTime: number;
+    escalationTime: number;
+}
+
+const SLA_POLICIES: Record<Priority, SLAPolicy> = {
+    [Priority.Critico]: { priority: Priority.Critico, maxResolutionTime: 240, escalationTime: 60 },
+    [Priority.Alto]: { priority: Priority.Alto, maxResolutionTime: 180, escalationTime: 45 },
+    [Priority.Medio]: { priority: Priority.Medio, maxResolutionTime: 120, escalationTime: 30 },
+    [Priority.Bajo]: { priority: Priority.Bajo, maxResolutionTime: 60, escalationTime: 15 }
+};

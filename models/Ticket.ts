@@ -37,12 +37,18 @@ export class Ticket {
     }
   }
 
-  changeStatus(status: string, action?: string): void {
+  changeStatus(
+    status: string, 
+    resolvedBy?: string, 
+    resolvedByLevel?: string,
+    resolutionTime?: number,
+    resolutionDate?: Date
+  ): void {
     const now = new Date();
-    this.history.push({ status, timestamp: now, action: action || 'N/A' });
+    this.history.push({ status, timestamp: now, action: resolvedBy ? `Resuelto por ${resolvedBy} (${resolvedByLevel})` : 'N/A' });
     this.status = status;
     if (status === "Resuelto") {
-      this.resolutionTime = now;
+      this.resolutionTime = resolutionDate || now;
     }
     this.notify();
   }
@@ -68,4 +74,12 @@ export class Ticket {
   }
 
   public status: string;
+}
+
+// Agregar a models/Ticket.ts
+interface TicketMetrics {
+    timeToResolution: number;
+    escalationCount: number;
+    responseTime: number;
+    slaCompliance: boolean;
 }

@@ -13,5 +13,13 @@ export class Level2Handler extends Handler {
       this.nextHandler(ticket);
     }
   }
+
+  handleTicket(ticket: Ticket): void {
+    if (ticket.priority === Priority.Medio) {
+        ticket.changeStatus('Resuelto', 'Técnico Level 2', 'Level 2');
+    } else {
+        this.escalateToNextLevel(ticket);
+    }
+}
 } 
 // Cambios
